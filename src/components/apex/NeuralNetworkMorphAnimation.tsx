@@ -3,25 +3,26 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { ALL_NEURAL_EDGES, NEURAL_NETWORK_NODES } from './neuralNetworkWireframeData'
+import { NEURAL_PRISM_WIREFRAME_DATA } from './neuralPrismWireframeData'
 
-const MAX_LINE_COUNT = 2500
-const CHAOS_LINE_COUNT = 400
+const MAX_LINE_COUNT = 4000
+const CHAOS_LINE_COUNT = 500
 const POINTS_PER_LINE = 32
 
 const ANIMATION_CONFIG = {
   timing: {
-    idleDuration: 1.5,
-    morphDuration: 2.5,
+    idleDuration: 4,
+    morphDuration: 1.5,
+    modelShowDuration: 3.5,
   },
   
   rotation: {
-    baseOffset: 4,
-    speedY: 0.08,
-    speedX: 0.05,
-    speedZ: 0.03,
-    amplitudeX: 0.08,
-    amplitudeZ: 0.04,
+    baseOffset: 6,
+    speedY: 0.15,
+    speedX: 0.1,
+    speedZ: 0.08,
+    amplitudeX: 0.12,
+    amplitudeZ: 0.05,
   },
   
   colors: {
@@ -54,21 +55,19 @@ interface LineData {
   nodeBType: 'inner' | 'outer' | 'extra'
 }
 
-type Phase = 'idle' | 'morphing_to_neural' | 'showing_neural'
+type Phase = 'idle' | 'morphing_to_neural' | 'showing_neural' | 'morphing_to_idle'
 
 function generateNeuralWireframe(maxLines?: number): THREE.Vector3[][] {
   const lines: THREE.Vector3[][] = []
-  const edgeCount = ALL_NEURAL_EDGES.length
-  const scale = 1.3
-  const rotationOffset = Math.PI / 6
-  
-  const cosR = Math.cos(rotationOffset)
-  const sinR = Math.sin(rotationOffset)
+  const scale = 1.6
+  const edgeCount = NEURAL_PRISM_WIREFRAME_DATA.length
   
   const targetCount = maxLines ? Math.min(maxLines, edgeCount) : edgeCount
+  const step = edgeCount / targetCount
   
   for (let i = 0; i < targetCount; i++) {
-    const edge = ALL_NEURAL_EDGES[i]
+    const edgeIndex = Math.floor(i * step) % edgeCount
+    const edge = NEURAL_PRISM_WIREFRAME_DATA[edgeIndex]
     const line: THREE.Vector3[] = []
     const [p1, p2] = edge
     for (let j = 0; j < POINTS_PER_LINE; j++) {
@@ -77,13 +76,14 @@ function generateNeuralWireframe(maxLines?: number): THREE.Vector3[][] {
       const y = (p1[1] + (p2[1] - p1[1]) * t) * scale
       const z = (p1[2] + (p2[2] - p1[2]) * t) * scale
       
-      // Slight rotation for better viewing angle
-      const rotX = x * cosR - z * sinR
-      const rotZ = x * sinR + z * cosR
-      
-      line.push(new THREE.Vector3(rotX, y, rotZ))
+      line.push(new THREE.Vector3(x, y, z))
     }
     lines.push(line)
+  }
+  
+  for (let i = lines.length - 1; i > 0; i--) {
+    const j = Math.floor((i * 2654435761) % (i + 1))
+    ;[lines[i], lines[j]] = [lines[j], lines[i]]
   }
   
   return lines
@@ -109,7 +109,7 @@ function SculptureLines() {
     const innerIdx = nodeIndex
     const outerIdx = nodeIndex - 8
     const extraIdx = nodeIndex - 16
-    const yOffset = 0.0
+    const yOffset = 0.3
     
     if (nodeType === 'inner') {
       const cornerIdx = innerIdx
@@ -117,7 +117,7 @@ function SculptureLines() {
       const y = (cornerIdx & 2 ? 1 : -1)
       const z = (cornerIdx & 4 ? 1 : -1)
       
-      const baseSize = 0.8
+      const baseSize = 0.7
       const pulseA = Math.sin(time * 1.2 + cornerIdx * 0.5) * 0.15
       const pulseB = Math.sin(time * 0.8 + cornerIdx * 0.3) * 0.1
       const scale = baseSize + pulseA + pulseB
@@ -137,7 +137,7 @@ function SculptureLines() {
       const y = (cornerIdx & 2 ? 1 : -1)
       const z = (cornerIdx & 4 ? 1 : -1)
       
-      const baseSize = 1.3
+      const baseSize = 1.2
       const pulseA = Math.sin(time * 0.9 + cornerIdx * 0.4 + Math.PI) * 0.12
       const pulseB = Math.sin(time * 1.1 + cornerIdx * 0.25) * 0.08
       const scale = baseSize + pulseA + pulseB
@@ -290,7 +290,31 @@ function SculptureLines() {
         visibleCountRef.current = targetVisible
       }
     } else if (phase === 'showing_neural') {
-      // Stay showing neural network - subtle pulse animation
+      tesseractTimeRef.current += 0.016
+      
+      if (phaseElapsed > ANIMATION_CONFIG.timing.modelShowDuration) {
+        linesDataRef.current.forEach(data => {
+          for (let j = 0; j < POINTS_PER_LINE * 3; j++) {
+            data.morphStartPositions[j] = data.currentPositions[j]
+          }
+        })
+        setPhase('morphing_to_idle')
+        phaseStartRef.current = now
+        morphProgressRef.current = 0
+      }
+    } else if (phase === 'morphing_to_idle') {
+      tesseractTimeRef.current += 0.016
+      morphProgressRef.current = Math.min(1, phaseElapsed / ANIMATION_CONFIG.timing.morphDuration)
+      
+      if (phaseElapsed > ANIMATION_CONFIG.timing.morphDuration) {
+        setPhase('idle')
+        phaseStartRef.current = now
+        visibleCountRef.current = CHAOS_LINE_COUNT
+      } else {
+        const progress = morphProgressRef.current
+        const targetVisible = targetLineCountRef.current - Math.floor((targetLineCountRef.current - CHAOS_LINE_COUNT) * progress)
+        visibleCountRef.current = targetVisible
+      }
     }
     
     const tesseractTime = tesseractTimeRef.current
@@ -304,10 +328,11 @@ function SculptureLines() {
       targetColor = tesseractColor
     } else if (phase === 'morphing_to_neural') {
       targetColor = tesseractColor.clone().lerp(neuralColor, morphProgressRef.current)
-    } else {
-      // Subtle pulsing effect when showing neural
+    } else if (phase === 'showing_neural') {
       const pulse = Math.sin(time * ANIMATION_CONFIG.nodes.pulseSpeed) * 0.15 + 0.85
       targetColor = neuralColor.clone().lerp(pulseColor, (1 - pulse) * 0.3)
+    } else {
+      targetColor = neuralColor.clone().lerp(tesseractColor, morphProgressRef.current)
     }
     
     groupRef.current.children.forEach((child, i) => {
@@ -369,13 +394,38 @@ function SculptureLines() {
           data.currentPositions[j * 3 + 2] = z
         }
       } else if (phase === 'showing_neural') {
-        // Add subtle breathing/pulse to the neural network
         const pulse = Math.sin(time * ANIMATION_CONFIG.nodes.pulseSpeed + i * 0.02) * ANIMATION_CONFIG.nodes.pulseAmplitude
         
         for (let j = 0; j < POINTS_PER_LINE * 3; j++) {
           const baseValue = data.targetPositions[j]
           positionAttr.array[j] = baseValue * (1 + pulse * 0.05)
           data.currentPositions[j] = positionAttr.array[j]
+        }
+      } else if (phase === 'morphing_to_idle') {
+        const t = morphProgressRef.current
+        const eased = t < 0.5 
+          ? 4 * t * t * t 
+          : 1 - Math.pow(-2 * t + 2, 3) / 2
+        
+        const nodeA = getTesseractNodePosition(data.nodeAIndex, data.nodeAType, tesseractTime)
+        const nodeB = getTesseractNodePosition(data.nodeBIndex, data.nodeBType, tesseractTime)
+        
+        for (let j = 0; j < POINTS_PER_LINE; j++) {
+          const pt = j / (POINTS_PER_LINE - 1)
+          const targetX = nodeA.x + (nodeB.x - nodeA.x) * pt
+          const targetY = nodeA.y + (nodeB.y - nodeA.y) * pt
+          const targetZ = nodeA.z + (nodeB.z - nodeA.z) * pt
+          
+          const x = data.morphStartPositions[j * 3] + (targetX - data.morphStartPositions[j * 3]) * eased
+          const y = data.morphStartPositions[j * 3 + 1] + (targetY - data.morphStartPositions[j * 3 + 1]) * eased
+          const z = data.morphStartPositions[j * 3 + 2] + (targetZ - data.morphStartPositions[j * 3 + 2]) * eased
+          
+          positionAttr.array[j * 3] = x
+          positionAttr.array[j * 3 + 1] = y
+          positionAttr.array[j * 3 + 2] = z
+          data.currentPositions[j * 3] = x
+          data.currentPositions[j * 3 + 1] = y
+          data.currentPositions[j * 3 + 2] = z
         }
       }
       
@@ -405,7 +455,7 @@ function SculptureLines() {
       const material = new THREE.LineBasicMaterial({
         color: ANIMATION_CONFIG.colors.neural,
         transparent: true,
-        opacity: 0.65,
+        opacity: 0.6,
         blending: THREE.AdditiveBlending,
       })
       
@@ -417,70 +467,9 @@ function SculptureLines() {
   }, [])
   
   return (
-    <group ref={groupRef} position={[0, 0, 0]} scale={0.6}>
+    <group ref={groupRef} position={[0, 1.35, 0]} scale={0.5}>
       {lineObjects.map((lineObj, i) => (
         <primitive key={i} object={lineObj} />
-      ))}
-    </group>
-  )
-}
-
-// Node spheres for neural network visualization
-function NetworkNodes() {
-  const groupRef = useRef<THREE.Group>(null)
-  
-  // Combine all nodes from all layers
-  const allNodes = useMemo(() => {
-    const nodes: THREE.Vector3[] = []
-    const scale = 1.3
-    const rotationOffset = Math.PI / 6
-    const cosR = Math.cos(rotationOffset)
-    const sinR = Math.sin(rotationOffset)
-    
-    Object.values(NEURAL_NETWORK_NODES).forEach(layerNodes => {
-      layerNodes.forEach(node => {
-        const x = node[0] * scale
-        const y = node[1] * scale
-        const z = node[2] * scale
-        const rotX = x * cosR - z * sinR
-        const rotZ = x * sinR + z * cosR
-        nodes.push(new THREE.Vector3(rotX, y, rotZ))
-      })
-    })
-    
-    return nodes
-  }, [])
-  
-  useFrame((state) => {
-    if (!groupRef.current) return
-    const time = state.clock.elapsedTime
-    
-    groupRef.current.children.forEach((child, i) => {
-      const mesh = child as THREE.Mesh
-      const material = mesh.material as THREE.MeshBasicMaterial
-      
-      // Pulse opacity
-      const pulse = Math.sin(time * 1.5 + i * 0.3) * 0.2 + 0.6
-      material.opacity = pulse
-      
-      // Subtle scale pulse
-      const scalePulse = 1 + Math.sin(time * 2 + i * 0.2) * 0.1
-      mesh.scale.setScalar(scalePulse * 0.08)
-    })
-  })
-  
-  return (
-    <group ref={groupRef} scale={0.6}>
-      {allNodes.map((pos, i) => (
-        <mesh key={i} position={[pos.x, pos.y, pos.z]}>
-          <sphereGeometry args={[1, 16, 16]} />
-          <meshBasicMaterial
-            color="#43A399"
-            transparent
-            opacity={0.8}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
       ))}
     </group>
   )
@@ -493,8 +482,8 @@ function GlowParticles() {
   const positions = useMemo(() => {
     const pos = new Float32Array(particleCount * 3)
     for (let i = 0; i < particleCount; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 5
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 4
+      pos[i * 3] = (Math.random() - 0.5) * 6
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 3
       pos[i * 3 + 2] = (Math.random() - 0.5) * 4
     }
     return pos
@@ -507,11 +496,11 @@ function GlowParticles() {
     
     for (let i = 0; i < particleCount; i++) {
       const i3 = i * 3
-      posAttr.array[i3 + 1] += Math.sin(time + i * 0.1) * 0.002
+      posAttr.array[i3 + 1] += Math.sin(time + i * 0.1) * 0.001
     }
     posAttr.needsUpdate = true
     
-    pointsRef.current.rotation.y = time * 0.03
+    pointsRef.current.rotation.y = time * 0.02
   })
   
   return (
@@ -541,10 +530,10 @@ function CameraRig() {
   
   useFrame((state) => {
     const t = state.clock.elapsedTime
-    camera.position.x = Math.sin(t * 0.06) * 0.4
-    camera.position.y = 1.0 + Math.sin(t * 0.08) * 0.2
-    camera.position.z = 4.0 + Math.cos(t * 0.06) * 0.3
-    camera.lookAt(0, 0, 0)
+    camera.position.x = 0 + Math.sin(t * 0.08) * 0.3
+    camera.position.y = 2.6 + Math.sin(t * 0.1) * 0.15
+    camera.position.z = 5 + Math.cos(t * 0.08) * 0.3
+    camera.lookAt(0, 1.35, 0)
   })
   
   return null
@@ -558,16 +547,15 @@ export function NeuralNetworkMorphAnimation({ className = '' }: NeuralNetworkMor
   return (
     <div className={`w-full h-full ${className}`}>
       <Canvas
-        camera={{ position: [0, 1.0, 4.0], fov: 50 }}
+        camera={{ position: [0, 2.6, 5], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={0.5} color="#43A399" />
-        <pointLight position={[-10, 5, -10]} intensity={0.3} color="#2D7A72" />
+        <pointLight position={[10, 10, 10]} intensity={0.4} color="#43A399" />
+        <pointLight position={[-10, 5, -10]} intensity={0.2} color="#2D7A72" />
         
         <SculptureLines />
-        <NetworkNodes />
         <GlowParticles />
         <CameraRig />
       </Canvas>

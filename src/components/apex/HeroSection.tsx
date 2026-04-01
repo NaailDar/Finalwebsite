@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import TesseractAnimation, { type TesseractVariant } from "./TesseractAnimation";
 import { VaultMorphAnimation } from "./VaultMorphAnimation";
 import { LightBulbMorphAnimation } from "./LightBulbMorphAnimation";
+import { NeuralNetworkMorphAnimation } from "./NeuralNetworkMorphAnimation";
 
 interface HeroSectionProps {
   accentLine: string;
@@ -23,6 +24,10 @@ const HeroSection = ({ accentLine, headline, subtitle, preHeadline, preSubline, 
       ) : tesseractVariant === "insights" ? (
         <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
           <LightBulbMorphAnimation />
+        </div>
+      ) : tesseractVariant === "infrastructure" ? (
+        <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
+          <NeuralNetworkMorphAnimation />
         </div>
       ) : (
         <TesseractAnimation variant={tesseractVariant} />
