@@ -12,9 +12,9 @@ import { VAULTDOOR_WIREFRAME_DATA } from './vaultDoorWireframeData'
 import { PRISM_WIREFRAME_DATA } from './prismWireframeData'
 import { NEURAL_PRISM_WIREFRAME_DATA } from './neuralPrismWireframeData'
 
-const MAX_LINE_COUNT = 4000
-const CHAOS_LINE_COUNT = 500
-const POINTS_PER_LINE = 32
+const MAX_LINE_COUNT = 2500
+const CHAOS_LINE_COUNT = 400
+const POINTS_PER_LINE = 24
 
 const ANIMATION_CONFIG = {
   timing: {
