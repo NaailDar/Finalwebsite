@@ -11,6 +11,7 @@ import ApisDataLayerPage from "./ApisDataLayerPage";
 import SecurityPage from "./SecurityPage";
 import InsightsPage from "./InsightsPage";
 import CompanyPage from "./CompanyPage";
+import ContactPage from "./ContactPage";
 import apexLogo from "@/assets/apex-logo.png";
 
 const pathToTab: Record<string, TabId> = {
@@ -23,6 +24,7 @@ const pathToTab: Record<string, TabId> = {
   "/security": "Security",
   "/insights": "Insights",
   "/company": "Company",
+  "/contact": "Contact",
 };
 
 const Index = () => {
@@ -43,6 +45,7 @@ const Index = () => {
       "Security": "/security",
       "Insights": "/insights",
       "Company": "/company",
+      "Contact": "/contact",
       "Home": "/",
     };
 
@@ -74,6 +77,8 @@ const Index = () => {
         return <InsightsPage />;
       case "Company":
         return <CompanyPage />;
+      case "Contact":
+        return <ContactPage />;
       default:
         return <HomePage onTabChange={handleTabChange} />;
     }

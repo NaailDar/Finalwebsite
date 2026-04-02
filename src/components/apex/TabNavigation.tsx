@@ -12,7 +12,7 @@ const tabs = [
   "Company",
 ] as const;
 
-export type TabId = (typeof tabs)[number] | "Overview" | "ALICE" | "Custom Workflows" | "Infrastructure" | "APIs & Data Layer" | "Security";
+export type TabId = (typeof tabs)[number] | "Overview" | "ALICE" | "Custom Workflows" | "Infrastructure" | "APIs & Data Layer" | "Security" | "Contact";
 
 export type SubSection = string;
 
@@ -204,13 +204,13 @@ const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
           })}
         </nav>
 
-        <a
-          href="mailto:contact@apexe3.com"
-          className="hidden items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground transition-colors hover:border-primary/50 hover:text-primary lg:flex"
+        <Link
+          to="/contact"
+          className="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-5 py-2 font-mono text-[11px] uppercase tracking-[0.15em] text-primary transition-colors hover:bg-primary/20 lg:flex"
         >
-          Contact
+          Request Demo
           <ArrowRight className="h-3 w-3" />
-        </a>
+        </Link>
 
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
