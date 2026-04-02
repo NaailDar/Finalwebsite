@@ -1,25 +1,81 @@
-import { useState } from "react";
-import apexLogo from "@/assets/apex-logo.png";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import TabNavigation, { type TabId } from "@/components/apex/TabNavigation";
-import OverviewTab from "@/components/apex/OverviewTab";
-import WorkflowsTab from "@/components/apex/WorkflowsTab";
-import BespokeWorkflowsTab from "@/components/apex/BespokeWorkflowsTab";
-import InfrastructureTab from "@/components/apex/InfrastructureTab";
-import InsightsTab from "@/components/apex/InsightsTab";
-import CompanyTab from "@/components/apex/CompanyTab";
-import ApiDataLayerTab from "@/components/apex/ApiDataLayerTab";
-import SecurityTab from "@/components/apex/SecurityTab";
+import TabNavigation from "@/components/apex/TabNavigation";
+import type { TabId } from "@/components/apex/TabNavigation";
+import HomePage from "./HomePage";
+import AlicePage from "./AlicePage";
+import SolutionsPage from "./SolutionsPage";
+import BespokeWorkflowsPage from "./BespokeWorkflowsPage";
+import InfrastructurePage from "./InfrastructurePage";
+import ApisDataLayerPage from "./ApisDataLayerPage";
+import SecurityPage from "./SecurityPage";
+import InsightsPage from "./InsightsPage";
+import CompanyPage from "./CompanyPage";
+import apexLogo from "@/assets/apex-logo.png";
+
+const pathToTab: Record<string, TabId> = {
+  "/": "Overview",
+  "/alice": "ALICE",
+  "/solutions": "Solutions",
+  "/bespoke-workflows": "Custom Workflows",
+  "/infrastructure": "Infrastructure",
+  "/apis-data-layer": "APIs & Data Layer",
+  "/security": "Security",
+  "/insights": "Insights",
+  "/company": "Company",
+};
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<TabId>("Overview");
-  const [scrollSection, setScrollSection] = useState<string | undefined>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
+
+  const activeTab = pathToTab[location.pathname] || "Overview";
 
   const handleTabChange = (tab: TabId, section?: string) => {
-    setActiveTab(tab);
-    setScrollSection(section);
-    if (!section) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    const tabToPath: Record<TabId, string> = {
+      "Overview": "/",
+      "ALICE": "/alice",
+      "Solutions": "/solutions",
+      "Custom Workflows": "/bespoke-workflows",
+      "Infrastructure": "/infrastructure",
+      "APIs & Data Layer": "/apis-data-layer",
+      "Security": "/security",
+      "Insights": "/insights",
+      "Company": "/company",
+      "Home": "/",
+    };
+
+    const path = tabToPath[tab];
+    if (section) {
+      navigate(`${path}/${section}`);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const renderPage = () => {
+    switch (activeTab) {
+      case "Overview":
+        return <HomePage onTabChange={handleTabChange} />;
+      case "ALICE":
+        return <AlicePage onTabChange={handleTabChange} />;
+      case "Solutions":
+        return <SolutionsPage />;
+      case "Custom Workflows":
+        return <BespokeWorkflowsPage />;
+      case "Infrastructure":
+        return <InfrastructurePage />;
+      case "APIs & Data Layer":
+        return <ApisDataLayerPage />;
+      case "Security":
+        return <SecurityPage />;
+      case "Insights":
+        return <InsightsPage />;
+      case "Company":
+        return <CompanyPage />;
+      default:
+        return <HomePage onTabChange={handleTabChange} />;
     }
   };
 
@@ -35,20 +91,11 @@ const Index = () => {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === "Overview" && <OverviewTab onTabChange={handleTabChange} isHome />}
-            {activeTab === "Solutions" && <WorkflowsTab scrollToSection={scrollSection} />}
-            {activeTab === "Custom Workflows" && <BespokeWorkflowsTab />}
-            {activeTab === "Infrastructure" && <InfrastructureTab />}
-            {activeTab === "APIs & Data Layer" && <ApiDataLayerTab />}
-            {activeTab === "Security" && <SecurityTab />}
-            {activeTab === "ALICE" && <OverviewTab onTabChange={handleTabChange} />}
-            {activeTab === "Insights" && <InsightsTab />}
-            {activeTab === "Company" && <CompanyTab scrollToSection={scrollSection} />}
+            {renderPage()}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-8 px-6 py-12 md:flex-row md:items-start md:justify-between lg:px-10">
           <div>
@@ -64,24 +111,19 @@ const Index = () => {
                 Platform
               </h4>
               <div className="mt-4 flex flex-col gap-2.5">
-                {["ALICE", "Bespoke Workflows", "Infrastructure"].map(
-                  (link) => {
-                    const tabMap: Record<string, TabId> = {
-                      "ALICE": "ALICE",
-                      "Bespoke Workflows": "Custom Workflows",
-                      "Infrastructure": "Infrastructure",
-                    };
-                    return (
-                      <button
-                        key={link}
-                        onClick={() => handleTabChange(tabMap[link])}
-                        className="text-left font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        {link}
-                      </button>
-                    );
-                  }
-                )}
+                {[
+                  { label: "ALICE", path: "/alice" },
+                  { label: "Bespoke Workflows", path: "/bespoke-workflows" },
+                  { label: "Infrastructure", path: "/infrastructure" },
+                ].map((link) => (
+                  <button
+                    key={link.label}
+                    onClick={() => navigate(link.path)}
+                    className="text-left font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -91,14 +133,14 @@ const Index = () => {
               </h4>
               <div className="mt-4 flex flex-col gap-2.5">
                 {[
-                  { label: "About", section: "about", tab: "Company" as TabId },
-                  { label: "Insights", section: undefined, tab: "Insights" as TabId },
-                  { label: "Careers", section: "careers", tab: "Company" as TabId },
-                  { label: "Contact", section: "contact", tab: "Company" as TabId },
+                  { label: "About", path: "/company/about" },
+                  { label: "Insights", path: "/insights" },
+                  { label: "Careers", path: "/company/careers" },
+                  { label: "Contact", path: "/company/contact" },
                 ].map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => handleTabChange(item.tab, item.section)}
+                    onClick={() => navigate(item.path)}
                     className="text-left font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {item.label}
