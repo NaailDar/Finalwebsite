@@ -19,23 +19,23 @@ const HeroSection = ({ accentLine, headline, subtitle, preHeadline, preSubline, 
   return (
     <div className="relative flex min-h-[60vh] items-end overflow-hidden pb-20">
       {tesseractVariant === "security" ? (
-        <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[15%]">
+        <div key="vault-animation" className="absolute top-0 right-0 w-[55%] h-full translate-x-[15%]">
           <VaultMorphAnimation />
         </div>
       ) : tesseractVariant === "insights" ? (
-        <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
+        <div key="lightbulb-animation" className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
           <LightBulbMorphAnimation />
         </div>
       ) : tesseractVariant === "infrastructure" ? (
-        <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
+        <div key="neural-animation" className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
           <NeuralNetworkMorphAnimation />
         </div>
       ) : tesseractVariant === "bespoke" ? (
-        <div className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
+        <div key="f1-animation" className="absolute top-0 right-0 w-[55%] h-full translate-x-[5%]">
           <F1MorphAnimation />
         </div>
       ) : (
-        <TesseractAnimation variant={tesseractVariant} />
+        <TesseractAnimation key={`tesseract-${tesseractVariant}`} variant={tesseractVariant} />
       )}
       <div className="relative z-10 mx-auto w-full max-w-[1400px] px-6 lg:px-10">
         <motion.div

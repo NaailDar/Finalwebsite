@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type TesseractVariant = "alice" | "solutions" | "infrastructure" | "security" | "insights" | "bespoke";
 
@@ -236,6 +236,8 @@ interface Props {
 
 const TesseractAnimation = ({ variant = "alice" }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Use a unique key to force new canvas creation on mount
+  const [canvasKey] = useState(() => `tesseract-canvas-${variant}-${Date.now()}`);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -337,12 +339,15 @@ const TesseractAnimation = ({ variant = "alice" }: Props) => {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
+      // Reset canvas dimensions to help with cleanup
+      canvas.width = 0;
+      canvas.height = 0;
     };
   }, [variant]);
 
   return (
     <div className="pointer-events-none absolute top-0 right-0 h-full w-[55%]">
-      <canvas ref={canvasRef} className="h-full w-full" />
+      <canvas key={canvasKey} ref={canvasRef} className="h-full w-full" />
     </div>
   );
 };

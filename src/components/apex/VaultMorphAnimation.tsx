@@ -474,22 +474,51 @@ interface VaultMorphAnimationProps {
   className?: string
 }
 
+// WebGL Cleanup Component
+function WebGLCleanup({ children }: { children: React.ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    return () => {
+      // Force cleanup of any WebGL contexts when unmounting
+      if (containerRef.current) {
+        const canvases = containerRef.current.querySelectorAll('canvas')
+        canvases.forEach(canvas => {
+          const gl = canvas.getContext('webgl') || canvas.getContext('webgl2')
+          if (gl) {
+            const ext = gl.getExtension('WEBGL_lose_context')
+            if (ext) ext.loseContext()
+          }
+        })
+      }
+    }
+  }, [])
+
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }}>{children}</div>
+}
+
 export function VaultMorphAnimation({ className = '' }: VaultMorphAnimationProps) {
+  // Use a unique key to force new canvas creation
+  const [canvasKey] = useState(() => `vault-canvas-${Date.now()}`)
+  
   return (
     <div className={`w-full h-full ${className}`}>
-      <Canvas
-        camera={{ position: [0, 1.2, 4.5], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: 'transparent' }}
-      >
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={0.4} color="#43A399" />
-        <pointLight position={[-10, 5, -10]} intensity={0.2} color="#2D7A72" />
-        
-        <SculptureLines />
-        <GlowParticles />
-        <CameraRig />
-      </Canvas>
+      <WebGLCleanup>
+        <Canvas
+          key={canvasKey}
+          camera={{ position: [0, 1.2, 4.5], fov: 45 }}
+          gl={{ antialias: true, alpha: true }}
+          style={{ background: 'transparent' }}
+        >
+          <ambientLight intensity={0.2} />
+          <pointLight position={[10, 10, 10]} intensity={0.4} color="#43A399" />
+          <pointLight position={[-10, 5, -10]} intensity={0.2} color="#2D7A72" />
+          
+          <SculptureLines />
+          <GlowParticles />
+          <CameraRig />
+        </Canvas>
+      </WebGLCleanup>
     </div>
   )
 }
