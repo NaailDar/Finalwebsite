@@ -23,7 +23,7 @@ interface DropdownItem {
   children?: { label: string; path: string }[];
 }
 
-const dropdowns: Partial<Record<string, DropdownItem[]>> = {
+export const dropdowns: Partial<Record<string, DropdownItem[]>> = {
   Solutions: [
     {
       label: "ALICE",
@@ -214,7 +214,7 @@ const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
 
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="text-foreground lg:hidden"
+          className="text-foreground lg:hidden max-[400px]:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>

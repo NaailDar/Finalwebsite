@@ -2,6 +2,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import TabNavigation from "@/components/apex/TabNavigation";
 import type { TabId } from "@/components/apex/TabNavigation";
+import MobileFloatingNav from "@/components/layout/MobileFloatingNav";
 import HomePage from "./HomePage";
 import AlicePage from "./AlicePage";
 import SolutionsPage from "./SolutionsPage";
@@ -164,6 +165,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <MobileFloatingNav />
     </div>
   );
 };
