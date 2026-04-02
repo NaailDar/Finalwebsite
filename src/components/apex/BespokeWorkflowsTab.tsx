@@ -161,7 +161,7 @@ const BespokeWorkflowsTab = () => {
         accentLine="Bespoke Workflows"
         headline={<>Closing the Last Mile<br />to Production</>}
         subtitle="Frontier AI models get you 80% of the way. The remaining 20% is where real value is created, and where most systems fail."
-        tesseractVariant="solutions"
+        tesseractVariant="bespoke"
       />
 
       {/* The Challenge */}
